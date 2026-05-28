@@ -1,14 +1,8 @@
 {
   "name": "doc-parsing",
   "description": "Extract text, tables, and metadata from PDF, DOCX, and images (OCR)",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "filesystem:read"
-  ],
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["filesystem:read"],
   "dependencies": [],
   "category": "document-ops",
   "version": "1.0.0"

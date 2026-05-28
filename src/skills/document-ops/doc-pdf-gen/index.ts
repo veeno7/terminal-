@@ -1,35 +1,15 @@
-import { z } from 'zod';
-import { InputSchema, OutputSchema, type SkillInput, type SkillOutput } from './schema';
+export type SkillResult = { success: boolean; data?: unknown; error?: string };
 
-export { InputSchema, OutputSchema };
-export type { SkillInput, SkillOutput };
-
-export type SkillResult = {
-  success: boolean;
-  data?: any;
-  error?: string;
-};
-
-async function executeInternal(params: SkillInput): Promise<SkillOutput> {
-  const { action, ...rest } = params as any;
-  return {
-    success: true,
-    message: action + ' action executed for doc-pdf-gen',
-    params: rest
-  } as any;
-}
-
-export async function execute(params: SkillInput): Promise<SkillResult> {
+export async function execute(params: Record<string, unknown>): Promise<SkillResult> {
   try {
-    const validated = InputSchema.parse(params);
-    const result = await executeInternal(validated);
-    return { success: true, data: result };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error instanceof z.ZodError
-        ? 'Validation error: ' + error.errors.map(e => e.message).join(', ')
-        : error.message || 'Unknown error occurred'
-    };
+    const action = params.action as string ?? 'generate';
+    switch (action) {
+      case 'generate': return { success: true, data: { fileId: `pdf_${Date.now()}`, filename: params.filename ?? 'output.pdf', pages: 1, note: 'Install pdfkit and configure for real PDF generation.' } };
+      case 'merge': return { success: true, data: { fileId: `pdf_merged_${Date.now()}`, merged: (params.files as unknown[])?.length ?? 0, filename: 'merged.pdf' } };
+      case 'split': return { success: true, data: { pages: [], filename: params.filename, note: 'Install pdf-lib for real splitting.' } };
+      default: return { success: false, error: `Unknown action: ${action}` };
+    }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
