@@ -1,321 +1,194 @@
 import { Request, Response } from 'express';
-import { v4 as uuid } from 'uuid';
-import type { ChatMessage, AiName, BrainstormRound } from '../../shared/types/index.js';
-import { askOpenAI } from '../providers/openai.js';
-import { askGroq } from '../providers/groq.js';
-import { askDeepSeek } from '../providers/deepseek.js';
-import { askGemini } from '../providers/gemini.js';
-import { getSkillList, parseSkillCalls, executeSkill } from '../skills-bridge.js';
+import { groqChat } from '../providers/groq';
+import { openaiChat } from '../providers/openai';
+import { deepseekChat } from '../providers/deepseek';
+import { geminiChat } from '../providers/gemini';
+import { executeSkill, listSkills } from '../skills/SkillRegistry';
 
-// ─── In-memory chat history ───────────────────────────────────
-let chatHistory: ChatMessage[] = [];
+export type AiName = 'groq' | 'openai' | 'deepseek' | 'gemini';
 
-type AskFn = (system: string, msgs: { role: 'user' | 'assistant'; content: string }[]) => Promise<string>;
-
-const aiCallers: Record<AiName, AskFn> = {
-  openai: askOpenAI,
-  groq: askGroq,
-  deepseek: askDeepSeek,
-  gemini: askGemini,
-};
-
-const AI_NAMES: AiName[] = ['openai', 'groq', 'deepseek', 'gemini'];
-
-const AI_DISPLAY: Record<AiName, string> = {
-  openai: 'OpenAI GPT',
-  groq: 'Groq',
-  deepseek: 'DeepSeek',
-  gemini: 'Gemini',
-};
-
-// ─── System prompts ───────────────────────────────────────────
-function getBrainstormSystemPrompt(aiName: AiName, round: BrainstormRound): string {
-  const name = AI_DISPLAY[aiName];
-  const others = AI_NAMES.filter((n) => n !== aiName).map((n) => `@${n}`).join(', ');
-  const skillList = getSkillList();
-
-  const base = `You are ${name}, one of four AI assistants brainstorming together as equal peers.
-The other AIs are: ${others}. You can tag them with @openai, @groq, @deepseek, @gemini, or @all.
-Be collaborative, curious, and direct. Build on good ideas. Question unclear points.
-Do NOT repeat what others said — add something new or build on it.
-
-You have access to the following skills that you can invoke to fetch real data, run operations, or produce outputs.
-To use a skill, include this exact syntax in your response:
-[SKILL:skill-name:{"param1":"value1","param2":"value2"}]
-
-Available skills:
-${skillList}
-
-Only invoke a skill if it genuinely helps answer the question. The result will be injected back into the conversation.`;
-
-  if (round === 1) {
-    return `${base}
-
-ROUND 1: Give your initial honest answer. You haven't seen the other AIs yet. Be thorough.
-If a skill would help you give a better answer, use it.`;
-  }
-  if (round === 2) {
-    return `${base}
-
-ROUND 2: You can now see what the other AIs said. Build on strong points, question weak ones.
-Tag a specific AI if you want their input. Add new angles not yet covered.
-Invoke a skill if it would help strengthen the group's thinking.`;
-  }
-  if (round === 3) {
-    return `${base}
-
-ROUND 3: The group is converging. Read all previous responses carefully.
-Refine your thinking based on what you've learned. Narrow toward the single best answer.
-If you agree with another AI's point, say so and expand it.`;
-  }
-  if (round === 'consensus') {
-    return `${base}
-
-CONSENSUS CHECK: Based on everything discussed, does the group have a solid, complete answer?
-Reply with exactly: YES or NO on the first line, then one sentence explaining why.`;
-  }
-  return base;
-}
-
-function getFinalDraftPrompt(): string {
-  return `You are Groq, writing the final collective output of a 4-AI brainstorm session.
-The group (OpenAI GPT, Groq, DeepSeek, Gemini) has discussed and reached consensus.
-Write the final clean, complete, well-structured answer — the product of all four AIs.
-Make it clear, thorough, and ready to use. If code is needed, include it fully.
-If skill results were produced during brainstorming, incorporate their outputs naturally.
-Do NOT mention the brainstorm process — just deliver the final answer.`;
-}
-
-// ─── Skill execution within AI responses ─────────────────────
-interface SkillResult {
+interface SkillCallResult {
   skillName: string;
   params: Record<string, unknown>;
-  success: boolean;
   result: string;
+  success: boolean;
 }
 
-async function processSkillCalls(content: string): Promise<{ cleanContent: string; skillResults: SkillResult[] }> {
-  const calls = parseSkillCalls(content);
-  const skillResults: SkillResult[] = [];
+// SSE helper — writes a typed event to the response stream
+function sendEvent(res: Response, event: string, data: unknown) {
+  res.write(`event: ${event}\n`);
+  res.write(`data: ${JSON.stringify(data)}\n\n`);
+}
 
-  let cleanContent = content;
+function parseSkillCalls(text: string) {
+  const calls: Array<{ tag: string; name: string; params: Record<string, unknown> }> = [];
+  const regex = /\[SKILL:([a-zA-Z0-9_-]+):(\{.*?\})\]/gs;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    try {
+      calls.push({ tag: match[0], name: match[1], params: JSON.parse(match[2]) });
+    } catch { /* skip malformed */ }
+  }
+  return calls;
+}
+
+async function resolveSkillCalls(text: string): Promise<{ resolvedText: string; skillResults: SkillCallResult[] }> {
+  const calls = parseSkillCalls(text);
+  let resolvedText = text;
+  const skillResults: SkillCallResult[] = [];
   for (const call of calls) {
-    const outcome = await executeSkill(call.skillName, call.params);
-    skillResults.push({ skillName: call.skillName, params: call.params, ...outcome });
-    // Replace the raw skill tag with a result placeholder in content
-    cleanContent = cleanContent.replace(
-      call.raw,
-      `[Used skill: ${call.skillName} → ${outcome.success ? 'success' : 'failed'}]`
-    );
+    const result = await executeSkill(call.name, call.params);
+    skillResults.push({ skillName: call.name, params: call.params, result: result.output, success: result.success });
+    resolvedText = resolvedText.replace(call.tag, `[SKILL_RESULT:${call.name}] ${result.output} [/SKILL_RESULT]`);
   }
-
-  return { cleanContent, skillResults };
+  return { resolvedText, skillResults };
 }
 
-// ─── Build message array for AI ──────────────────────────────
-function buildMessages(
-  userMessage: string,
-  priorRoundMessages?: ChatMessage[]
-): { role: 'user' | 'assistant'; content: string }[] {
-  const msgs: { role: 'user' | 'assistant'; content: string }[] = [];
+function buildSystemPrompt(aiName: AiName, round: number): string {
+  const skills = listSkills().map((s) => `- ${s.name}: ${s.description}`).join('\n');
+  const roundDesc =
+    round === 1 ? 'Round 1: Give your independent, honest answer. Think freely.'
+    : round === 2 ? 'Round 2: You can see what the other AIs said. Build on their ideas, challenge weak points, add depth.'
+    : 'Round 3: Converge. What is the single best answer everyone can agree on?';
 
-  // Include recent final drafts from prior turns for context
-  const priorDrafts = chatHistory.filter((m) => m.isFinalDraft).slice(-3);
-  for (const d of priorDrafts) {
-    msgs.push({ role: 'assistant', content: `[Previous answer]: ${d.content}` });
+  return `You are ${aiName.toUpperCase()}, one of four AI peers in a live collaborative brainstorm.
+The other AIs are: ${(['groq','openai','deepseek','gemini'] as AiName[]).filter(a=>a!==aiName).join(', ')}.
+
+${roundDesc}
+
+You may invoke real skills using: [SKILL:skill_name:{"param":"value"}]
+Available skills:
+${skills}
+
+Rules:
+- Tag a peer with @groq, @openai, @deepseek, @gemini to speak to them directly.
+- Use @all to address everyone.
+- Use [SKILL:...] when a tool would improve your answer.
+- Be collaborative. React to what others said. Show your reasoning.
+- Keep responses focused — max 3-4 paragraphs.`;
+}
+
+async function callAi(aiName: AiName, messages: Array<{ role: string; content: string }>, round: number): Promise<string> {
+  const system = buildSystemPrompt(aiName, round);
+  const full = [{ role: 'system', content: system }, ...messages];
+  switch (aiName) {
+    case 'groq':     return groqChat(full);
+    case 'openai':   return openaiChat(full);
+    case 'deepseek': return deepseekChat(full);
+    case 'gemini':   return geminiChat(full);
   }
-
-  if (priorRoundMessages && priorRoundMessages.length > 0) {
-    const context = priorRoundMessages
-      .map((m) => {
-        let label = `[${AI_DISPLAY[m.aiName!]} - Round ${m.round}]`;
-        const skillSummary = m.skillResults && m.skillResults.length > 0
-          ? `\n  Skills used: ${m.skillResults.map((s: SkillResult) => `${s.skillName} (${s.success ? 'ok' : 'failed'})`).join(', ')}`
-          : '';
-        return `${label}: ${m.content}${skillSummary}`;
-      })
-      .join('\n\n');
-    msgs.push({
-      role: 'user',
-      content: `Here is what the other AIs said:\n\n${context}\n\nUser question: ${userMessage}`,
-    });
-  } else {
-    msgs.push({ role: 'user', content: userMessage });
-  }
-
-  return msgs;
 }
 
-// ─── Call all 4 AIs in parallel ──────────────────────────────
-async function callAllAIs(
-  round: BrainstormRound,
-  userMessage: string,
-  priorMessages: ChatMessage[]
-): Promise<ChatMessage[]> {
-  const results = await Promise.allSettled(
-    AI_NAMES.map(async (aiName) => {
-      const systemPrompt = getBrainstormSystemPrompt(aiName, round);
-      const msgs = buildMessages(userMessage, round === 1 ? undefined : priorMessages);
-      const rawContent = await aiCallers[aiName](systemPrompt, msgs);
-
-      // Process any skill calls in the response
-      const { cleanContent, skillResults } = await processSkillCalls(rawContent);
-
-      // If there are skill results, append them to content for other AIs to see
-      let finalContent = cleanContent;
-      if (skillResults.length > 0) {
-        const resultText = skillResults
-          .map((s) => `\n[Skill result — ${s.skillName}]:\n${s.result}`)
-          .join('\n');
-        finalContent = `${cleanContent}\n${resultText}`;
-      }
-
-      const msg: ChatMessage = {
-        id: uuid(),
-        role: 'agent',
-        content: finalContent,
-        timestamp: new Date().toISOString(),
-        aiName,
-        round,
-        skillResults: skillResults.length > 0 ? skillResults : undefined,
-      } as ChatMessage & { skillResults?: SkillResult[] };
-
-      return msg;
-    })
-  );
-
-  return results
-    .filter((r): r is PromiseFulfilledResult<ChatMessage> => r.status === 'fulfilled')
-    .map((r) => r.value);
+function containsCode(text: string): boolean {
+  return /```[\s\S]*?```/.test(text);
 }
 
-// ─── Consensus check ─────────────────────────────────────────
-async function checkConsensus(
-  userMessage: string,
-  allRoundMessages: ChatMessage[]
-): Promise<{ votes: Record<AiName, boolean>; messages: ChatMessage[] }> {
-  const votes: Partial<Record<AiName, boolean>> = {};
-  const messages: ChatMessage[] = [];
-
-  const context = allRoundMessages
-    .map((m) => `[${AI_DISPLAY[m.aiName!]} - Round ${m.round}]: ${m.content}`)
-    .join('\n\n');
-
-  const results = await Promise.allSettled(
-    AI_NAMES.map(async (aiName) => {
-      const systemPrompt = getBrainstormSystemPrompt(aiName, 'consensus');
-      const msgs: { role: 'user' | 'assistant'; content: string }[] = [
-        {
-          role: 'user',
-          content: `Original question: ${userMessage}\n\nAll brainstorm responses:\n\n${context}\n\nDo you agree the group has a complete answer?`,
-        },
-      ];
-      const content = await aiCallers[aiName](systemPrompt, msgs);
-      const agreed = content.trim().toUpperCase().startsWith('YES');
-      const msg: ChatMessage = {
-        id: uuid(),
-        role: 'agent',
-        content,
-        timestamp: new Date().toISOString(),
-        aiName,
-        round: 'consensus',
-        vote: agreed,
-      };
-      return { aiName, agreed, msg };
-    })
-  );
-
-  for (const r of results) {
-    if (r.status === 'fulfilled') {
-      votes[r.value.aiName] = r.value.agreed;
-      messages.push(r.value.msg);
-    }
-  }
-
-  return { votes: votes as Record<AiName, boolean>, messages };
-}
-
-// ─── Final draft by Groq ──────────────────────────────────────
-async function writeFinalDraft(userMessage: string, allMessages: ChatMessage[]): Promise<ChatMessage> {
-  const context = allMessages
-    .filter((m) => m.round !== 'consensus')
-    .map((m) => `[${AI_DISPLAY[m.aiName!]} - Round ${m.round}]: ${m.content}`)
-    .join('\n\n');
-
-  const msgs: { role: 'user' | 'assistant'; content: string }[] = [
-    {
-      role: 'user',
-      content: `Original question: ${userMessage}\n\nFull brainstorm:\n\n${context}\n\nWrite the final collective answer.`,
-    },
-  ];
-
-  const content = await askGroq(getFinalDraftPrompt(), msgs);
-
-  return {
-    id: uuid(),
-    role: 'agent',
-    content,
-    timestamp: new Date().toISOString(),
-    aiName: 'groq',
-    round: 'draft',
-    isFinalDraft: true,
-  };
-}
-
-// ─── Exported handlers ────────────────────────────────────────
-export function getChatHistory(_req: Request, res: Response) {
-  res.json(chatHistory);
-}
-
-export async function sendMessage(req: Request, res: Response) {
-  const { message } = req.body;
-
-  if (!message || typeof message !== 'string') {
-    res.status(400).json({ error: 'Message is required' });
-    return;
-  }
-
-  const userMsg: ChatMessage = {
-    id: uuid(),
-    role: 'user',
-    content: message,
-    timestamp: new Date().toISOString(),
-  };
-  chatHistory.push(userMsg);
-
+async function executeCode(text: string): Promise<string> {
+  const match = /```(?:javascript|typescript|js|ts)?\n([\s\S]*?)```/.exec(text);
+  if (!match) return '';
   try {
-    const allBrainstormMessages: ChatMessage[] = [];
-
-    const round1 = await callAllAIs(1, message, []);
-    allBrainstormMessages.push(...round1);
-
-    const round2 = await callAllAIs(2, message, round1);
-    allBrainstormMessages.push(...round2);
-
-    const round3 = await callAllAIs(3, message, [...round1, ...round2]);
-    allBrainstormMessages.push(...round3);
-
-    const { votes, messages: consensusMsgs } = await checkConsensus(message, allBrainstormMessages);
-    allBrainstormMessages.push(...consensusMsgs);
-
-    const consensusReached = Object.values(votes).every(Boolean);
-
-    if (!consensusReached) {
-      const bonusRound = await callAllAIs(3, message, allBrainstormMessages.filter((m) => m.round !== 'consensus'));
-      allBrainstormMessages.push(...bonusRound);
-    }
-
-    const finalDraft = await writeFinalDraft(message, allBrainstormMessages);
-    chatHistory.push(finalDraft);
-
-    res.json({
-      userMessage: userMsg,
-      messages: allBrainstormMessages,
-      finalDraft,
-      consensusReached,
-    });
+    const fn = new Function(`
+      const logs = [];
+      const console = { log: (...a) => logs.push(a.join(' ')), error: (...a) => logs.push('[ERR] '+a.join(' ')), warn: (...a) => logs.push('[WARN] '+a.join(' ')) };
+      try { ${match[1].trim()} } catch(e) { logs.push('[RUNTIME ERROR] '+e.message); }
+      return logs.join('\\n');
+    `);
+    return fn() || '(no output)';
   } catch (err) {
-    console.error('[chat.controller] Brainstorm error:', err);
-    res.status(500).json({ error: 'Brainstorm session failed. Check your API keys.' });
+    return `[Execution Error] ${String(err)}`;
   }
+}
+
+export async function handleChat(req: Request, res: Response): Promise<void> {
+  const { message, history = [] } = req.body as {
+    message: string;
+    history: Array<{ role: string; content: string }>;
+  };
+
+  if (!message) { res.status(400).json({ error: 'message is required' }); return; }
+
+  // Set up SSE
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no'); // disable nginx buffering
+  res.flushHeaders();
+
+  const aiNames: AiName[] = ['groq', 'openai', 'deepseek', 'gemini'];
+  const allRoundContents: string[][] = [];
+  const baseHistory = history.map((h) => ({ role: h.role, content: h.content }));
+  const baseMessages = [...baseHistory, { role: 'user' as const, content: message }];
+
+  // ─── Rounds 1–3 ──────────────────────────────────────────────────────────
+  let currentMessages = [...baseMessages];
+
+  for (let roundNum = 1; roundNum <= 3; roundNum++) {
+    sendEvent(res, 'round_start', { round: roundNum });
+
+    const roundContents: string[] = [];
+
+    // Fire all 4 AIs for this round concurrently, stream each as it resolves
+    const roundPromises = aiNames.map(async (ai, idx) => {
+      // Stagger slightly so UI feels like a real conversation (100ms apart)
+      await new Promise((r) => setTimeout(r, idx * 120));
+
+      sendEvent(res, 'ai_thinking', { ai, round: roundNum });
+
+      const raw = await callAi(ai, currentMessages, roundNum);
+      const { resolvedText, skillResults } = await resolveSkillCalls(raw);
+
+      sendEvent(res, 'ai_message', { ai, round: roundNum, content: resolvedText, skillResults });
+
+      return { ai, content: resolvedText };
+    });
+
+    const results = await Promise.all(roundPromises);
+    const roundSummary = results.map((r) => `[${r.ai.toUpperCase()}]: ${r.content}`).join('\n\n');
+    allRoundContents.push(results.map((r) => r.content));
+
+    // Add this round's responses to message history for context in next round
+    currentMessages = [
+      ...currentMessages,
+      { role: 'assistant', content: `[Round ${roundNum} responses]\n${roundSummary}` },
+      ...(roundNum < 3 ? [{
+        role: 'user',
+        content: roundNum === 1
+          ? 'Round 2: You can now see what the others said. Build on it, challenge it, deepen it.'
+          : 'Round 3: Converge. Agree on the single best answer.',
+      }] : []),
+    ];
+
+    sendEvent(res, 'round_end', { round: roundNum });
+  }
+
+  // ─── Consensus check ─────────────────────────────────────────────────────
+  sendEvent(res, 'consensus_checking', {});
+  const round3Summary = allRoundContents[2].join('\n\n');
+  const consensusRaw = await groqChat([
+    { role: 'system', content: 'You are an impartial evaluator. Given four AI responses, did they reach consensus? Reply only "true" or "false".' },
+    { role: 'user', content: round3Summary },
+  ]);
+  const consensus = consensusRaw.trim().toLowerCase().startsWith('true');
+  sendEvent(res, 'consensus_result', { consensus });
+
+  // ─── Final draft by Groq ─────────────────────────────────────────────────
+  sendEvent(res, 'final_draft_start', {});
+  const allContext = allRoundContents
+    .map((round, i) => `=== Round ${i + 1} ===\n${round.map((c, j) => `[${aiNames[j].toUpperCase()}]: ${c}`).join('\n\n')}`)
+    .join('\n\n');
+
+  const finalDraft = await groqChat([
+    { role: 'system', content: 'You are Groq, the final synthesizer. Write the single best, complete answer based on all brainstorming rounds. If code is needed, include a fenced code block. Be thorough.' },
+    { role: 'user', content: `Original question: ${message}\n\n${allContext}` },
+  ]);
+
+  let codeOutput: string | undefined;
+  if (containsCode(finalDraft)) {
+    sendEvent(res, 'executing_code', {});
+    codeOutput = await executeCode(finalDraft);
+  }
+
+  sendEvent(res, 'final_draft', { content: finalDraft, codeOutput });
+  sendEvent(res, 'done', {});
+  res.end();
 }
