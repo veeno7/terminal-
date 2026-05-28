@@ -1,16 +1,8 @@
 {
   "name": "data-etl",
   "description": "Extract, transform, and load data between sources with pipeline management",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound",
-    "filesystem:read",
-    "filesystem:write"
-  ],
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound", "filesystem:read", "filesystem:write"],
   "dependencies": [],
   "category": "data-engineering",
   "version": "1.0.0"

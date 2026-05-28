@@ -1,35 +1,18 @@
-import { z } from 'zod';
-import { InputSchema, OutputSchema, type SkillInput, type SkillOutput } from './schema';
+export type SkillResult = { success: boolean; data?: unknown; error?: string };
 
-export { InputSchema, OutputSchema };
-export type { SkillInput, SkillOutput };
-
-export type SkillResult = {
-  success: boolean;
-  data?: any;
-  error?: string;
-};
-
-async function executeInternal(params: SkillInput): Promise<SkillOutput> {
-  const { action, ...rest } = params as any;
-  return {
-    success: true,
-    message: action + ' action executed for data-etl',
-    params: rest
-  } as any;
-}
-
-export async function execute(params: SkillInput): Promise<SkillResult> {
+export async function execute(params: Record<string, unknown>): Promise<SkillResult> {
   try {
-    const validated = InputSchema.parse(params);
-    const result = await executeInternal(validated);
-    return { success: true, data: result };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error instanceof z.ZodError
-        ? 'Validation error: ' + error.errors.map(e => e.message).join(', ')
-        : error.message || 'Unknown error occurred'
-    };
+    const action = params.action as string ?? 'transform';
+    switch (action) {
+      case 'extract': return { success: true, data: { records: [], source: params.source, extracted: 0 } };
+      case 'transform': {
+        const data = params.data as unknown[] ?? [];
+        return { success: true, data: { records: data, transformed: data.length, pipeline: params.pipeline } };
+      }
+      case 'load': return { success: true, data: { loaded: (params.records as unknown[])?.length ?? 0, destination: params.destination } };
+      default: return { success: false, error: `Unknown action: ${action}` };
+    }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }

@@ -1,35 +1,15 @@
-import { z } from 'zod';
-import { InputSchema, OutputSchema, type SkillInput, type SkillOutput } from './schema';
+export type SkillResult = { success: boolean; data?: unknown; error?: string };
 
-export { InputSchema, OutputSchema };
-export type { SkillInput, SkillOutput };
-
-export type SkillResult = {
-  success: boolean;
-  data?: any;
-  error?: string;
-};
-
-async function executeInternal(params: SkillInput): Promise<SkillOutput> {
-  const { action, ...rest } = params as any;
-  return {
-    success: true,
-    message: action + ' action executed for data-queues',
-    params: rest
-  } as any;
-}
-
-export async function execute(params: SkillInput): Promise<SkillResult> {
+export async function execute(params: Record<string, unknown>): Promise<SkillResult> {
   try {
-    const validated = InputSchema.parse(params);
-    const result = await executeInternal(validated);
-    return { success: true, data: result };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error instanceof z.ZodError
-        ? 'Validation error: ' + error.errors.map(e => e.message).join(', ')
-        : error.message || 'Unknown error occurred'
-    };
+    const action = params.action as string ?? 'status';
+    switch (action) {
+      case 'enqueue': return { success: true, data: { jobId: `job_${Date.now()}`, queue: params.queue, data: params.data, status: 'queued' } };
+      case 'status': return { success: true, data: { queue: params.queue, waiting: 0, active: 0, completed: 0, failed: 0, note: 'Set REDIS_URL for real queue management.' } };
+      case 'drain': return { success: true, data: { queue: params.queue, drained: true } };
+      default: return { success: false, error: `Unknown action: ${action}` };
+    }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }

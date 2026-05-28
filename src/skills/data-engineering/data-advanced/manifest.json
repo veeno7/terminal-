@@ -1,16 +1,8 @@
 {
   "name": "data-advanced",
-  "description": "Stream processing with Kafka, graph database queries, vector store operations",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound",
-    "filesystem:read",
-    "filesystem:write"
-  ],
+  "description": "Advanced data processing: streaming, aggregation, joins, and complex transformations",
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound", "filesystem:read", "filesystem:write"],
   "dependencies": [],
   "category": "data-engineering",
   "version": "1.0.0"

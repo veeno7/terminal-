@@ -1,14 +1,8 @@
 {
   "name": "data-queues",
-  "description": "Manage job queues with BullMQ/Redis - enqueue, process, schedule, retry",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound"
-  ],
+  "description": "Manage message queues, job queues, and event streams via BullMQ/Redis",
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound"],
   "dependencies": [],
   "category": "data-engineering",
   "version": "1.0.0"
