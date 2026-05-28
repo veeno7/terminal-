@@ -2,10 +2,15 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '');
 
-export async function askGemini(systemPrompt: string, messages: { role: 'user' | 'assistant'; content: string }[]): Promise<string> {
-  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash', systemInstruction: systemPrompt });
+export async function askGemini(
+  systemPrompt: string,
+  messages: { role: 'user' | 'assistant'; content: string }[]
+): Promise<string> {
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.0-flash',
+    systemInstruction: systemPrompt,
+  });
 
-  // Convert to Gemini chat history format
   const history = messages.slice(0, -1).map((m) => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.content }],
