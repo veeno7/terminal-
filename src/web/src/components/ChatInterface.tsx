@@ -114,7 +114,7 @@ function BrainstormBlock({ sessionMessages, finalDraft, consensusReached }: {
       {/* Toggle brainstorm */}
       <button
         onClick={() => setExpanded(!expanded)}
-        className="text-xs text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1"
+        className="text-xs text-gray-500 hover:text-gray-300 transition-colors flex items-center gap-1 cursor-pointer"
       >
         {expanded ? '▾' : '▸'} {expanded ? 'Hide' : 'Show'} brainstorm ({sessionMessages.length} messages)
       </button>
@@ -151,10 +151,10 @@ function BrainstormBlock({ sessionMessages, finalDraft, consensusReached }: {
 }
 
 // ─── API call ─────────────────────────────────────────────────
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+const API_BASE = import.meta.env.VITE_API_URL ?? 'https://cortexforge-core.onrender.com';
 
 async function sendMessageToApi(message: string): Promise<BrainstormResponse> {
-  const res = await fetch(`${API_BASE}/api/chat/message`, {
+  const res = await fetch(`${API_BASE}/api/chat`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ message }),
@@ -212,7 +212,7 @@ export default function ChatInterface() {
       addChatMessage({
         id: `err-${Date.now()}`,
         role: 'agent',
-        content: 'Something went wrong. Check that all 4 API keys are set in your .env file.',
+        content: 'Something went wrong. Check that all 4 API keys are set correctly.',
         timestamp: new Date().toISOString(),
       });
     } finally {
@@ -227,7 +227,6 @@ export default function ChatInterface() {
     }
   };
 
-  // Group messages: find session for each agent message
   const userMessages = chatMessages.filter((m) => m.role === 'user');
 
   return (
@@ -274,7 +273,7 @@ export default function ChatInterface() {
                 </div>
               </div>
 
-              {/* Brainstorm session */}
+              {/* Brainstorm session or loading */}
               {session ? (
                 <div className="pl-4">
                   <BrainstormBlock
@@ -287,10 +286,10 @@ export default function ChatInterface() {
                 <div className="flex gap-3 pl-4">
                   <div className="flex items-center gap-3 bg-gray-900 border border-gray-800 rounded-2xl px-4 py-3">
                     <div className="flex gap-1">
-                      {['openai', 'groq', 'deepseek', 'gemini'].map((ai, i) => (
+                      {(['openai', 'groq', 'deepseek', 'gemini'] as AiName[]).map((ai, i) => (
                         <span
                           key={ai}
-                          className={`w-2 h-2 rounded-full animate-bounce ${AI_CONFIG[ai as AiName].color.replace('text-', 'bg-')}`}
+                          className={`w-2 h-2 rounded-full animate-bounce ${AI_CONFIG[ai].color.replace('text-', 'bg-')}`}
                           style={{ animationDelay: `${i * 100}ms` }}
                         />
                       ))}
@@ -321,7 +320,7 @@ export default function ChatInterface() {
           <button
             onClick={handleSend}
             disabled={!input.trim() || isTyping}
-            className="bg-purple-600 hover:bg-purple-500 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-xl px-4 py-3 transition-all disabled:cursor-not-allowed"
+            className="bg-purple-600 hover:bg-purple-500 disabled:bg-gray-800 disabled:text-gray-600 text-white rounded-xl px-4 py-3 transition-all disabled:cursor-not-allowed cursor-pointer"
           >
             <Send className="w-4 h-4" />
           </button>
