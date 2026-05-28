@@ -5,9 +5,10 @@
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/copy-skills.cjs",
     "start": "node dist/index.js",
     "dev": "nodemon --watch src --ext ts --exec 'npm run build && npm start'",
+    "copy-skills": "node scripts/copy-skills.cjs",
     "setup": "./scripts/setup.sh",
     "docker:build": "docker-compose build",
     "docker:up": "docker-compose up -d",
@@ -20,7 +21,6 @@
   "license": "ISC",
   "dependencies": {
     "@ai-sdk/openai": "^0.0.31",
-    "@google/generative-ai": "^0.15.0",
     "@langchain/community": "^0.2.14",
     "@langchain/core": "^0.2.13",
     "@langchain/openai": "^0.1.2",
