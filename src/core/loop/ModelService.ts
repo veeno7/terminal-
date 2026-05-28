@@ -40,7 +40,7 @@ export class ModelService {
           { role: 'system', content: `You are a fast, efficient cognitive subsystem. Context: ${context || 'None'}` },
           { role: 'user', content: prompt }
         ],
-        model: 'llama3-8b-8192',
+        model: ''llama-3.1-8b-instant,
       });
       const duration = Date.now() - start;
       console.log(`[ModelService] Groq call took ${duration}ms`);
