@@ -157,7 +157,9 @@ export default function ChatInterface() {
     const historyForApi = history.map((h) => ({ role: h.role, content: h.content }));
 
     try {
-      const res = await fetch('/api/chat', {
+      // In production, VITE_API_URL points to the backend. In dev, proxy handles it.
+      const API_BASE = import.meta.env.VITE_API_URL ?? '';
+      const res = await fetch(`${API_BASE}/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userMessage, history: historyForApi }),
