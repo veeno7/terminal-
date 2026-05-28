@@ -101,7 +101,7 @@ function BrainstormBlock({ sessionMessages, finalDraft, consensusReached }: {
   finalDraft: ChatMessage;
   consensusReached: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   const rounds = [1, 2, 3, 'consensus'] as const;
   const roundMap = rounds.reduce<Record<string, ChatMessage[]>>((acc, r) => {
