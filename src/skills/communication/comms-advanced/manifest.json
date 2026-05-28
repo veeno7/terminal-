@@ -1,14 +1,8 @@
 {
   "name": "comms-advanced",
   "description": "Send SMS, push notifications, and manage video calls via Twilio/Vonage",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound"
-  ],
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound"],
   "dependencies": [],
   "category": "communication",
   "version": "1.0.0"

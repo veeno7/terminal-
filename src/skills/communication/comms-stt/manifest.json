@@ -1,15 +1,8 @@
 {
   "name": "comms-stt",
   "description": "Transcribe speech to text with speaker identification and diarization",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "filesystem:read",
-    "network:outbound"
-  ],
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["filesystem:read", "network:outbound"],
   "dependencies": [],
   "category": "communication",
   "version": "1.0.0"
