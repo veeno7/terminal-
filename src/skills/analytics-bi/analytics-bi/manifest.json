@@ -1,15 +1,8 @@
 {
   "name": "analytics-bi",
-  "description": "Web analytics, A/B testing, conversion funnels, and business intelligence",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound",
-    "filesystem:read"
-  ],
+  "description": "Query analytics dashboards, generate reports, and visualize business intelligence data",
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound"],
   "dependencies": [],
   "category": "analytics-bi",
   "version": "1.0.0"

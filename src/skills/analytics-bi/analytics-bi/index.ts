@@ -1,35 +1,15 @@
-import { z } from 'zod';
-import { InputSchema, OutputSchema, type SkillInput, type SkillOutput } from './schema';
+export type SkillResult = { success: boolean; data?: unknown; error?: string };
 
-export { InputSchema, OutputSchema };
-export type { SkillInput, SkillOutput };
-
-export type SkillResult = {
-  success: boolean;
-  data?: any;
-  error?: string;
-};
-
-async function executeInternal(params: SkillInput): Promise<SkillOutput> {
-  const { action, ...rest } = params as any;
-  return {
-    success: true,
-    message: action + ' action executed for analytics-bi',
-    params: rest
-  } as any;
-}
-
-export async function execute(params: SkillInput): Promise<SkillResult> {
+export async function execute(params: Record<string, unknown>): Promise<SkillResult> {
   try {
-    const validated = InputSchema.parse(params);
-    const result = await executeInternal(validated);
-    return { success: true, data: result };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error instanceof z.ZodError
-        ? 'Validation error: ' + error.errors.map(e => e.message).join(', ')
-        : error.message || 'Unknown error occurred'
-    };
+    const action = params.action as string ?? 'report';
+    switch (action) {
+      case 'report': return { success: true, data: { report: params.report ?? 'summary', period: params.period ?? 'last_7_days', metrics: { pageViews: 0, users: 0, sessions: 0 }, note: 'Connect analytics source via env vars.' } };
+      case 'query': return { success: true, data: { query: params.query, rows: [], columns: [] } };
+      case 'chart': return { success: true, data: { type: params.chartType ?? 'bar', data: [], labels: [] } };
+      default: return { success: false, error: `Unknown action: ${action}` };
+    }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
