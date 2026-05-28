@@ -1,14 +1,8 @@
 {
   "name": "sec-alerting",
   "description": "Send alerts via PagerDuty, webhooks, email, and SMS with escalation policies",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound"
-  ],
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound"],
   "dependencies": [],
   "category": "security-monitoring",
   "version": "1.0.0"

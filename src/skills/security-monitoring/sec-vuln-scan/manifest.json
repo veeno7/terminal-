@@ -1,15 +1,8 @@
 {
   "name": "sec-vuln-scan",
   "description": "Scan dependencies, check SSL/TLS, and detect known vulnerabilities",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound",
-    "filesystem:read"
-  ],
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound", "filesystem:read"],
   "dependencies": [],
   "category": "security-monitoring",
   "version": "1.0.0"

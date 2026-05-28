@@ -1,15 +1,8 @@
 {
   "name": "sec-metrics",
   "description": "Monitor CPU, memory, disk, network, and process metrics for system health",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "process:execute",
-    "filesystem:read"
-  ],
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["process:execute", "filesystem:read"],
   "dependencies": [],
   "category": "security-monitoring",
   "version": "1.0.0"
