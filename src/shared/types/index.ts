@@ -10,7 +10,6 @@ export interface ChatMessage {
   reasoning?: string;
   timestamp: string;
   showReasoning?: boolean;
-  // Brainstorm fields
   aiName?: AiName;
   round?: BrainstormRound;
   replyTo?: AiName | 'all';
@@ -31,7 +30,7 @@ export interface BrainstormResponse {
   consensusReached: boolean;
 }
 
-// ─── Skill Types ─────────────────────────────────────────────
+// ─── Skill Types ──────────────────────────────────────────────
 
 export interface Skill {
   name: string;
@@ -42,8 +41,9 @@ export interface Skill {
 }
 
 export interface Observation {
-  type: string;
-  data: unknown;
+  status: 'success' | 'failure';
+  data?: unknown;
+  error?: string;
   timestamp: Date;
 }
 
@@ -68,19 +68,26 @@ export interface Goal {
 
 export interface Task {
   id: string;
-  label: string;
+  title: string;
   description: string;
   status: 'pending' | 'running' | 'completed' | 'failed';
-  progress: number;
+  dependencies: string[];
+  priority: number;
+  retryCount: number;
+  createdAt: Date;
+  updatedAt: Date;
+  result?: unknown;
+  error?: string;
+  label?: string;
+  progress?: number;
   assignedSkill?: string;
-  dependencies?: string[];
 }
 
 export interface Plan {
   id: string;
   goalId: string;
   tasks: Task[];
-  createdAt: string;
+  status: 'active' | 'completed' | 'failed';
 }
 
 // ─── Cognition Types ──────────────────────────────────────────
