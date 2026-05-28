@@ -1,35 +1,24 @@
-import { z } from 'zod';
-import { InputSchema, OutputSchema, type SkillInput, type SkillOutput } from './schema';
+export type SkillResult = { success: boolean; data?: unknown; error?: string };
 
-export { InputSchema, OutputSchema };
-export type { SkillInput, SkillOutput };
-
-export type SkillResult = {
-  success: boolean;
-  data?: any;
-  error?: string;
-};
-
-async function executeInternal(params: SkillInput): Promise<SkillOutput> {
-  const { action, ...rest } = params as any;
-  return {
-    success: true,
-    message: action + ' action executed for blockchain-web3',
-    params: rest
-  } as any;
-}
-
-export async function execute(params: SkillInput): Promise<SkillResult> {
+export async function execute(params: Record<string, unknown>): Promise<SkillResult> {
   try {
-    const validated = InputSchema.parse(params);
-    const result = await executeInternal(validated);
-    return { success: true, data: result };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error instanceof z.ZodError
-        ? 'Validation error: ' + error.errors.map(e => e.message).join(', ')
-        : error.message || 'Unknown error occurred'
-    };
+    const action = params.action as string ?? 'balance';
+    const rpcUrl = process.env.ETH_RPC_URL ?? 'https://cloudflare-eth.com';
+    if (action === 'balance' && params.address) {
+      const res = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_getBalance', params: [params.address, 'latest'], id: 1 }) });
+      const json = await res.json() as { result?: string };
+      const weiHex = json.result ?? '0x0';
+      const eth = (parseInt(weiHex, 16) / 1e18).toFixed(6);
+      return { success: true, data: { address: params.address, balance: eth, unit: 'ETH', network: params.network ?? 'mainnet' } };
+    }
+    if (action === 'gas') {
+      const res = await fetch(rpcUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', method: 'eth_gasPrice', params: [], id: 1 }) });
+      const json = await res.json() as { result?: string };
+      const gwei = (parseInt(json.result ?? '0x0', 16) / 1e9).toFixed(2);
+      return { success: true, data: { gasPrice: gwei, unit: 'Gwei' } };
+    }
+    return { success: true, data: { action, network: params.network ?? 'mainnet', note: 'Set ETH_RPC_URL for full blockchain access.' } };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
