@@ -1,15 +1,8 @@
 {
   "name": "dev-cicd",
   "description": "Create, trigger, and monitor CI/CD pipelines for GitHub Actions and GitLab CI",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound",
-    "process:execute"
-  ],
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound", "process:execute"],
   "dependencies": [],
   "category": "devops",
   "version": "1.0.0"

@@ -1,15 +1,8 @@
 {
   "name": "dev-cloud-deploy",
   "description": "Provision and manage cloud resources on AWS, GCP, and Azure",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound",
-    "process:execute"
-  ],
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound", "process:execute"],
   "dependencies": [],
   "category": "devops",
   "version": "1.0.0"

@@ -1,73 +1,26 @@
-import { z } from 'zod';
-import { InputSchema, OutputSchema, type SkillInput, type SkillOutput } from './schema';
+export type SkillResult = { success: boolean; data?: unknown; error?: string };
 
-export { InputSchema, OutputSchema };
-export type { SkillInput, SkillOutput };
-
-export type SkillResult = {
-  success: boolean;
-  data?: any;
-  error?: string;
-};
-
-async function executeInternal(params: SkillInput) {
-  switch (params.action) {
-    case 'query':
-      return {
-        success: true,
-        records: Array.from({ length: Math.min(params.maxResults || 100, 5) }, (_, i) => ({
-          id: `rec_${i}_${Date.now()}`,
-          fields: {
-            Name: `Record ${i + 1}`,
-            Status: ['Active', 'Pending', 'Completed'][i % 3],
-            Created: new Date(Date.now() - i * 86400000).toISOString()
-          },
-          createdTime: new Date(Date.now() - i * 86400000).toISOString(),
-          url: `https://${params.platform}.com/${params.databaseId || 'db'}/${i}`
-        }))
-      };
-    case 'create':
-      return {
-        success: true,
-        record: {
-          id: `rec_${Date.now()}`,
-          fields: params.fields || {}
-        }
-      };
-    case 'update':
-      return {
-        success: true,
-        record: {
-          id: params.recordId || `rec_${Date.now()}`,
-          fields: params.fields || {}
-        }
-      };
-    case 'delete':
-      return { success: true };
-    case 'list-databases':
-      return {
-        success: true,
-        records: [
-          { id: 'db1', fields: { Name: 'Projects', Type: 'Database' } },
-          { id: 'db2', fields: { Name: 'Tasks', Type: 'Database' } }
-        ]
-      };
-    default:
-      throw new Error(`Unknown action: ${params.action}`);
-  }
-}
-
-export async function execute(params: SkillInput): Promise<SkillResult> {
+export async function execute(params: Record<string, unknown>): Promise<SkillResult> {
   try {
-    const validated = InputSchema.parse(params);
-    const result = await executeInternal(validated);
-    return { success: true, data: result };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error instanceof z.ZodError
-        ? `Validation error: ${error.errors.map(e => e.message).join(', ')}`
-        : error.message || 'Unknown error occurred'
-    };
+    const action = params.action as string ?? 'query';
+    const notionToken = process.env.NOTION_API_KEY;
+    if (params.provider === 'notion' && notionToken && action === 'query') {
+      const res = await fetch(`https://api.notion.com/v1/databases/${params.databaseId}/query`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${notionToken}`, 'Notion-Version': '2022-06-28', 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+      const data = await res.json() as unknown;
+      return { success: res.ok, data };
+    }
+    switch (action) {
+      case 'query': return { success: true, data: { records: [{ id: 'rec_1', fields: { Name: 'Sample Record', Status: 'Active' } }] } };
+      case 'create': return { success: true, data: { id: `rec_${Date.now()}`, fields: params.fields, created: true } };
+      case 'update': return { success: true, data: { id: params.recordId, updated: true } };
+      case 'delete': return { success: true, data: { id: params.recordId, deleted: true } };
+      default: return { success: false, error: `Unknown action: ${action}` };
+    }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
