@@ -1,14 +1,8 @@
 {
   "name": "biz-ops",
-  "description": "CRM, e-commerce, payments, and accounting operations",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound"
-  ],
+  "description": "Automate business operations: invoicing, CRM updates, inventory, and workflows",
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound"],
   "dependencies": [],
   "category": "biz-ops",
   "version": "1.0.0"

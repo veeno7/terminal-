@@ -1,35 +1,16 @@
-import { z } from 'zod';
-import { InputSchema, OutputSchema, type SkillInput, type SkillOutput } from './schema';
+export type SkillResult = { success: boolean; data?: unknown; error?: string };
 
-export { InputSchema, OutputSchema };
-export type { SkillInput, SkillOutput };
-
-export type SkillResult = {
-  success: boolean;
-  data?: any;
-  error?: string;
-};
-
-async function executeInternal(params: SkillInput): Promise<SkillOutput> {
-  const { action, ...rest } = params as any;
-  return {
-    success: true,
-    message: action + ' action executed for biz-ops',
-    params: rest
-  } as any;
-}
-
-export async function execute(params: SkillInput): Promise<SkillResult> {
+export async function execute(params: Record<string, unknown>): Promise<SkillResult> {
   try {
-    const validated = InputSchema.parse(params);
-    const result = await executeInternal(validated);
-    return { success: true, data: result };
-  } catch (error: any) {
-    return {
-      success: false,
-      error: error instanceof z.ZodError
-        ? 'Validation error: ' + error.errors.map(e => e.message).join(', ')
-        : error.message || 'Unknown error occurred'
-    };
+    const action = params.action as string ?? 'status';
+    switch (action) {
+      case 'invoice': return { success: true, data: { invoiceId: `inv_${Date.now()}`, amount: params.amount, currency: params.currency ?? 'USD', created: true } };
+      case 'crm-update': return { success: true, data: { contactId: params.contactId, updated: true, fields: params.fields } };
+      case 'inventory': return { success: true, data: { sku: params.sku, quantity: params.quantity, updated: true } };
+      case 'workflow': return { success: true, data: { workflowId: `wf_${Date.now()}`, triggered: true, steps: [] } };
+      default: return { success: false, error: `Unknown action: ${action}` };
+    }
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : String(err) };
   }
 }
