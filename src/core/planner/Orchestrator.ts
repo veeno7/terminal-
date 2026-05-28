@@ -53,10 +53,10 @@ export class Orchestrator {
   async runStep() {
     if (!this.activePlan) return;
 
-    const pendingTasks = this.activePlan.tasks.filter(t => t.status === 'pending');
+    const pendingTasks = this.activePlan.tasks.filter((t: Task) => t.status === 'pending');
     for (const task of pendingTasks) {
-      const dependenciesMet = task.dependencies.every(depId => {
-        const dep = this.activePlan?.tasks.find(t => t.id === depId);
+      const dependenciesMet = task.dependencies.every((depId: string) => {
+        const dep = this.activePlan?.tasks.find((t: Task) => t.id === depId);
         return dep?.status === 'completed';
       });
 
@@ -65,7 +65,7 @@ export class Orchestrator {
       }
     }
 
-    const allDone = this.activePlan.tasks.every(t => t.status === 'completed');
+    const allDone = this.activePlan.tasks.every((t: Task) => t.status === 'completed');
     if (allDone) {
       this.activePlan.status = 'completed';
     }
@@ -87,11 +87,11 @@ export class Orchestrator {
       } else {
         task.status = 'failed';
         task.error = observation.error;
-        await this.memory.procedural.recordSkillFailure('system-shell', { cmd: '...' }, observation.error || 'Unknown error');
+        await this.memory.procedural.recordSkillFailure('system-shell', { cmd: '...' }, observation.error ?? 'Unknown error');
       }
-    } catch (error: any) {
+    } catch (err: unknown) {
       task.status = 'failed';
-      task.error = error.message;
+      task.error = err instanceof Error ? err.message : String(err);
     }
 
     task.updatedAt = new Date();
