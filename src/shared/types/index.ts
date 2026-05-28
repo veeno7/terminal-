@@ -41,6 +41,7 @@ export interface Skill {
 }
 
 export interface Observation {
+  taskId: string;
   status: 'success' | 'failure';
   data?: unknown;
   error?: string;
