@@ -1,14 +1,8 @@
 {
   "name": "legal-entity-factory",
-  "description": "Generate formation documents for LLCs, corporations, and nonprofits; create EIN applications",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "filesystem:write"
-  ],
+  "description": "Generate legal documents, contracts, terms of service, and compliance templates",
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound"],
   "dependencies": [],
   "category": "legal-entity-factory",
   "version": "1.0.0"
