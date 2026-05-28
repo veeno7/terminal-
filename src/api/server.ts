@@ -10,7 +10,7 @@ import chatRoutes from './routes/chat.routes.js';
 import tasksRoutes from './routes/tasks.routes.js';
 import { setupWebSocket } from './websocket.js';
 
-const PORT = process.env.API_PORT ? parseInt(process.env.API_PORT, 10) : 3001;
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 const HOST = '0.0.0.0';
 
 const app = express();
