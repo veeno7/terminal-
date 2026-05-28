@@ -142,7 +142,7 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
   const aiNames: AiName[] = ['groq', 'openai', 'deepseek', 'gemini'];
   const allRoundContents: string[][] = [];
 
-  // Build base message history (user/assistant only — strip any other roles)
+  // Build base message history (user/assistant only)
   const baseHistory: ChatMessage[] = history
     .filter((h) => h.role === 'user' || h.role === 'assistant')
     .map((h) => ({ role: h.role as 'user' | 'assistant', content: h.content }));
@@ -159,13 +159,20 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
 
       sendEvent(res, 'ai_thinking', { ai, round: roundNum });
 
-      const systemPrompt = buildSystemPrompt(ai, roundNum);
-      const raw = await callAi(ai, systemPrompt, currentMessages);
-      const { resolvedText, skillResults } = await resolveSkillCalls(raw);
+      try {
+        const systemPrompt = buildSystemPrompt(ai, roundNum);
+        const raw = await callAi(ai, systemPrompt, currentMessages);
+        const { resolvedText, skillResults } = await resolveSkillCalls(raw);
 
-      sendEvent(res, 'ai_message', { ai, round: roundNum, content: resolvedText, skillResults });
-
-      return { ai, content: resolvedText };
+        sendEvent(res, 'ai_message', { ai, round: roundNum, content: resolvedText, skillResults });
+        return { ai, content: resolvedText };
+      } catch (err) {
+        // One AI failing should NOT kill the others — send an error message for this AI
+        const errorMsg = `[Error: ${String(err instanceof Error ? err.message : err)}]`;
+        console.error(`[chat.controller] ${ai} failed in round ${roundNum}:`, err);
+        sendEvent(res, 'ai_message', { ai, round: roundNum, content: errorMsg, skillResults: [] });
+        return { ai, content: errorMsg };
+      }
     });
 
     const results = await Promise.all(roundPromises);
@@ -190,11 +197,17 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
   // ─── Consensus check ─────────────────────────────────────────────────────
   sendEvent(res, 'consensus_checking', {});
   const round3Summary = allRoundContents[2].join('\n\n');
-  const consensusRaw = await askGroq(
-    'You are an impartial evaluator. Given four AI responses, did they reach consensus? Reply only "true" or "false".',
-    [{ role: 'user', content: round3Summary }]
-  );
-  const consensus = consensusRaw.trim().toLowerCase().startsWith('true');
+
+  let consensus = false;
+  try {
+    const consensusRaw = await askGroq(
+      'You are an impartial evaluator. Given four AI responses, did they reach consensus? Reply only "true" or "false".',
+      [{ role: 'user', content: round3Summary }]
+    );
+    consensus = consensusRaw.trim().toLowerCase().startsWith('true');
+  } catch (err) {
+    console.error('[chat.controller] Consensus check failed:', err);
+  }
   sendEvent(res, 'consensus_result', { consensus });
 
   // ─── Final draft by Groq ─────────────────────────────────────────────────
@@ -203,10 +216,16 @@ export async function handleChat(req: Request, res: Response): Promise<void> {
     .map((round, i) => `=== Round ${i + 1} ===\n${round.map((c, j) => `[${aiNames[j].toUpperCase()}]: ${c}`).join('\n\n')}`)
     .join('\n\n');
 
-  const finalDraft = await askGroq(
-    'You are Groq, the final synthesizer. Write the single best, complete answer based on all brainstorming rounds. If code is needed, include a fenced code block. Be thorough.',
-    [{ role: 'user', content: `Original question: ${message}\n\n${allContext}` }]
-  );
+  let finalDraft = 'Unable to generate final draft.';
+  try {
+    finalDraft = await askGroq(
+      'You are Groq, the final synthesizer. Write the single best, complete answer based on all brainstorming rounds. If code is needed, include a fenced code block. Be thorough.',
+      [{ role: 'user', content: `Original question: ${message}\n\n${allContext}` }]
+    );
+  } catch (err) {
+    console.error('[chat.controller] Final draft failed:', err);
+    finalDraft = `[Final draft error: ${String(err instanceof Error ? err.message : err)}]`;
+  }
 
   let codeOutput: string | undefined;
   if (containsCode(finalDraft)) {
