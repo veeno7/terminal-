@@ -1,9 +1,9 @@
 import { Request, Response } from 'express';
-import { groqChat } from '../providers/groq';
-import { openaiChat } from '../providers/openai';
-import { deepseekChat } from '../providers/deepseek';
-import { geminiChat } from '../providers/gemini';
-import { executeSkill, listSkills } from '../skills/SkillRegistry';
+import { groqChat } from '../providers/groq.js';
+import { openaiChat } from '../providers/openai.js';
+import { deepseekChat } from '../providers/deepseek.js';
+import { geminiChat } from '../providers/gemini.js';
+import { executeSkill, listSkills } from '../skills/SkillRegistry.js';
 
 export type AiName = 'groq' | 'openai' | 'deepseek' | 'gemini';
 
@@ -45,7 +45,7 @@ async function resolveSkillCalls(text: string): Promise<{ resolvedText: string; 
 }
 
 function buildSystemPrompt(aiName: AiName, round: number): string {
-  const skills = listSkills().map((s) => `- ${s.name}: ${s.description}`).join('\n');
+  const skills = listSkills().map((s: { name: string; description: string }) => `- ${s.name}: ${s.description}`).join('\n');
   const roundDesc =
     round === 1 ? 'Round 1: Give your independent, honest answer. Think freely.'
     : round === 2 ? 'Round 2: You can see what the other AIs said. Build on their ideas, challenge weak points, add depth.'
