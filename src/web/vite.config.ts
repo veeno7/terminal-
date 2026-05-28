@@ -8,11 +8,11 @@ export default defineConfig({
     host: '0.0.0.0',
     proxy: {
       '/api': {
-        target: 'http://localhost:3001',
+        target: 'https://cortexforge-core.onrender.com',
         changeOrigin: true,
       },
       '/ws': {
-        target: 'ws://localhost:3001',
+        target: 'wss://cortexforge-core.onrender.com',
         ws: true,
       },
     },
