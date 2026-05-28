@@ -1,14 +1,8 @@
 {
   "name": "math-science",
-  "description": "Evaluate mathematical expressions, generate LaTeX, graph theory, statistics, molecule visualization",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "filesystem:write"
-  ],
+  "description": "Perform mathematical computations, unit conversions, and scientific calculations",
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": [],
   "dependencies": [],
   "category": "math-science",
   "version": "1.0.0"

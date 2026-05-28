@@ -1,16 +1,8 @@
 {
   "name": "iot-hardware",
-  "description": "Manage IoT devices, read sensors, send commands, and interact with hardware",
-  "parameters": {
-    "type": "object",
-    "properties": {},
-    "required": []
-  },
-  "permissions": [
-    "network:outbound",
-    "process:execute",
-    "filesystem:read"
-  ],
+  "description": "Read sensor data, control IoT devices, and manage hardware via MQTT and REST",
+  "parameters": { "type": "object", "properties": {}, "required": [] },
+  "permissions": ["network:outbound"],
   "dependencies": [],
   "category": "iot-hardware",
   "version": "1.0.0"
