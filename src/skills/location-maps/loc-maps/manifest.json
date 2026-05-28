@@ -1,0 +1,15 @@
+{
+  "name": "loc-maps",
+  "description": "Geocoding, reverse geocoding, route optimization, and geofencing",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound"
+  ],
+  "dependencies": [],
+  "category": "location-maps",
+  "version": "1.0.0"
+}

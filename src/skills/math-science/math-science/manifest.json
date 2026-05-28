@@ -1,0 +1,15 @@
+{
+  "name": "math-science",
+  "description": "Evaluate mathematical expressions, generate LaTeX, graph theory, statistics, molecule visualization",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "filesystem:write"
+  ],
+  "dependencies": [],
+  "category": "math-science",
+  "version": "1.0.0"
+}

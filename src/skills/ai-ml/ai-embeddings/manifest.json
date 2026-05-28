@@ -1,0 +1,15 @@
+{
+  "name": "ai-embeddings",
+  "description": "Generate text and image embeddings for vector search and similarity",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound"
+  ],
+  "dependencies": [],
+  "category": "ai-ml",
+  "version": "1.0.0"
+}

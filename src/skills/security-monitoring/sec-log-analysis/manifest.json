@@ -1,0 +1,15 @@
+{
+  "name": "sec-log-analysis",
+  "description": "Parse logs, detect anomalies, and generate security insights from log data",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "filesystem:read"
+  ],
+  "dependencies": [],
+  "category": "security-monitoring",
+  "version": "1.0.0"
+}

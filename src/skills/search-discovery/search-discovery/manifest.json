@@ -1,0 +1,17 @@
+{
+  "name": "search-discovery",
+  "description": "Full-text and semantic search with Elasticsearch, vector search, and web scraping",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound",
+    "filesystem:read",
+    "filesystem:write"
+  ],
+  "dependencies": [],
+  "category": "search-discovery",
+  "version": "1.0.0"
+}

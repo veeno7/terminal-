@@ -1,0 +1,15 @@
+{
+  "name": "dev-api-gateway",
+  "description": "Create, manage, and deploy API routes with rate limiting and auth",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound"
+  ],
+  "dependencies": [],
+  "category": "devops",
+  "version": "1.0.0"
+}

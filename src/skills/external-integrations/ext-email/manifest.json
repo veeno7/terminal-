@@ -1,0 +1,15 @@
+{
+  "name": "ext-email",
+  "description": "Send and receive emails via SMTP/Gmail API with attachments and threading",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound"
+  ],
+  "dependencies": [],
+  "category": "external-integrations",
+  "version": "1.0.0"
+}

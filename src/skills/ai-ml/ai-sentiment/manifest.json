@@ -1,0 +1,15 @@
+{
+  "name": "ai-sentiment",
+  "description": "Analyze sentiment, detect emotions, and extract entities from text",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound"
+  ],
+  "dependencies": [],
+  "category": "ai-ml",
+  "version": "1.0.0"
+}

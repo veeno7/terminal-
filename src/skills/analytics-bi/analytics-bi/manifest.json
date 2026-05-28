@@ -1,0 +1,16 @@
+{
+  "name": "analytics-bi",
+  "description": "Web analytics, A/B testing, conversion funnels, and business intelligence",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound",
+    "filesystem:read"
+  ],
+  "dependencies": [],
+  "category": "analytics-bi",
+  "version": "1.0.0"
+}

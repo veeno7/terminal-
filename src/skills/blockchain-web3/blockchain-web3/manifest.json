@@ -1,0 +1,15 @@
+{
+  "name": "blockchain-web3",
+  "description": "Manage wallets, deploy smart contracts, mint NFTs, and query on-chain data",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound"
+  ],
+  "dependencies": [],
+  "category": "blockchain-web3",
+  "version": "1.0.0"
+}

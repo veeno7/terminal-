@@ -1,0 +1,17 @@
+{
+  "name": "doc-spreadsheet",
+  "description": "Read, write, and manipulate Excel and Google Sheets - CRUD on cells, rows, formulas",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "filesystem:read",
+    "filesystem:write",
+    "network:outbound"
+  ],
+  "dependencies": [],
+  "category": "document-ops",
+  "version": "1.0.0"
+}

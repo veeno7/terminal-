@@ -1,0 +1,16 @@
+{
+  "name": "data-webhooks",
+  "description": "Handle incoming webhooks with validation, filtering, and routing",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:inbound",
+    "network:outbound"
+  ],
+  "dependencies": [],
+  "category": "data-engineering",
+  "version": "1.0.0"
+}

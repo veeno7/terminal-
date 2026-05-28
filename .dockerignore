@@ -1,0 +1,43 @@
+# ─── Dependencies ────────────────────────────────────────────
+node_modules/
+npm-debug.log*
+
+# ─── Build artifacts ─────────────────────────────────────────
+dist/
+*.tsbuildinfo
+
+# ─── Data / Persistence ─────────────────────────────────────
+data/
+*.db
+*.sqlite
+
+# ─── Environment ─────────────────────────────────────────────
+.env
+.env.local
+
+# ─── IDE / Editor ───────────────────────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ─── OS files ────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ─── Test / Coverage ────────────────────────────────────────
+coverage/
+*.test.ts
+*.spec.ts
+
+# ─── Logs ────────────────────────────────────────────────────
+*.log
+logs/
+
+# ─── Misc ────────────────────────────────────────────────────
+.git/
+.gitignore
+docker-compose.yml
+Dockerfile
+README.md

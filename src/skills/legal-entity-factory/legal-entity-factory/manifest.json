@@ -1,0 +1,15 @@
+{
+  "name": "legal-entity-factory",
+  "description": "Generate formation documents for LLCs, corporations, and nonprofits; create EIN applications",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "filesystem:write"
+  ],
+  "dependencies": [],
+  "category": "legal-entity-factory",
+  "version": "1.0.0"
+}

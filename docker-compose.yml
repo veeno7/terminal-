@@ -1,0 +1,87 @@
+# ============================================================
+# CortexForge — Docker Compose
+# Spins up the full stack: core engine, API, and frontend
+# ============================================================
+
+services:
+  # ─── Core Engine (Cognitive Loop) ─────────────────────────
+  core-engine:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cortexforge-engine
+    command: ["node", "dist/index.js"]
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    volumes:
+      - cortexforge-data:/app/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - cortexforge-net
+
+  # ─── API Server (Express + WebSocket) ────────────────────
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cortexforge-api
+    command: ["node", "dist/api/server.js"]
+    ports:
+      - "3001:3001"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - API_PORT=3001
+    volumes:
+      - cortexforge-data:/app/data
+    depends_on:
+      core-engine:
+        condition: service_started
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "require('http').get('http://localhost:3001/api/health', (r) => { process.exit(r.statusCode === 200 ? 0 : 1) }).on('error', () => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - cortexforge-net
+
+  # ─── Frontend (Nginx serving React app) ──────────────────
+  frontend:
+    build:
+      context: ./src/web
+      dockerfile: Dockerfile
+    container_name: cortexforge-frontend
+    ports:
+      - "5173:5173"
+    depends_on:
+      api:
+        condition: service_started
+    restart: unless-stopped
+    networks:
+      - cortexforge-net
+
+volumes:
+  cortexforge-data:
+    driver: local
+
+networks:
+  cortexforge-net:
+    driver: bridge

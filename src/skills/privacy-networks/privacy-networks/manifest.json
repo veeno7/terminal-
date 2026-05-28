@@ -1,0 +1,16 @@
+{
+  "name": "privacy-networks",
+  "description": "Route traffic through Tor, I2P, or VPN networks for anonymous access",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound",
+    "process:execute"
+  ],
+  "dependencies": [],
+  "category": "privacy-networks",
+  "version": "1.0.0"
+}

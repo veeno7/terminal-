@@ -1,0 +1,17 @@
+{
+  "name": "ext-cloud-storage",
+  "description": "Upload, download, list, and manage files on Google Drive, Dropbox, and S3",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound",
+    "filesystem:read",
+    "filesystem:write"
+  ],
+  "dependencies": [],
+  "category": "external-integrations",
+  "version": "1.0.0"
+}

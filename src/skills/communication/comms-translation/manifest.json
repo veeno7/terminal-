@@ -1,0 +1,15 @@
+{
+  "name": "comms-translation",
+  "description": "Translate text between languages with batch processing and language detection",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound"
+  ],
+  "dependencies": [],
+  "category": "communication",
+  "version": "1.0.0"
+}

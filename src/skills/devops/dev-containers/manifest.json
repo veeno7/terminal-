@@ -1,0 +1,17 @@
+{
+  "name": "dev-containers",
+  "description": "Manage Docker containers, images, compose stacks, and Kubernetes resources",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "process:execute",
+    "filesystem:read",
+    "filesystem:write"
+  ],
+  "dependencies": [],
+  "category": "devops",
+  "version": "1.0.0"
+}

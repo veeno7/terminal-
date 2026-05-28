@@ -1,0 +1,16 @@
+{
+  "name": "sec-compliance",
+  "description": "Run compliance checks, penetration tests, and gather threat intelligence",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound",
+    "process:execute"
+  ],
+  "dependencies": [],
+  "category": "security-monitoring",
+  "version": "1.0.0"
+}

@@ -1,0 +1,16 @@
+{
+  "name": "doc-pdf-gen",
+  "description": "Generate, merge, split, sign, and convert PDF documents",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "filesystem:read",
+    "filesystem:write"
+  ],
+  "dependencies": [],
+  "category": "document-ops",
+  "version": "1.0.0"
+}

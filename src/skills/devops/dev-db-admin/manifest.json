@@ -1,0 +1,17 @@
+{
+  "name": "dev-db-admin",
+  "description": "Execute SQL queries, run migrations, manage backups, and administer databases",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound",
+    "filesystem:read",
+    "filesystem:write"
+  ],
+  "dependencies": [],
+  "category": "devops",
+  "version": "1.0.0"
+}

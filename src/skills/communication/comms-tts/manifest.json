@@ -1,0 +1,16 @@
+{
+  "name": "comms-tts",
+  "description": "Convert text to speech with voice cloning, accent conversion, and SSML support",
+  "parameters": {
+    "type": "object",
+    "properties": {},
+    "required": []
+  },
+  "permissions": [
+    "network:outbound",
+    "filesystem:write"
+  ],
+  "dependencies": [],
+  "category": "communication",
+  "version": "1.0.0"
+}
