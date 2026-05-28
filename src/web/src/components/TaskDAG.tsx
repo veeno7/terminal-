@@ -2,7 +2,7 @@
 // Task DAG Visualizer — React Flow DAG for task dependencies
 // ============================================================
 
-import { useEffect, useMemo, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import {
   ReactFlow,
   Background,
@@ -21,7 +21,7 @@ import { useStore } from '../store/useStore';
 import { api } from '../hooks/api';
 import { CheckCircle2, Circle, Loader2, XCircle, SkipForward, Clock } from 'lucide-react';
 
-const statusConfig: Record<string, { color: string; bg: string; border: string; icon: any }> = {
+const statusConfig: Record<string, { color: string; bg: string; border: string; icon: React.ElementType }> = {
   completed: { color: '#22c55e', bg: 'rgba(34,197,94,0.1)', border: '#22c55e', icon: CheckCircle2 },
   running: { color: '#3b82f6', bg: 'rgba(59,130,246,0.1)', border: '#3b82f6', icon: Loader2 },
   pending: { color: '#6b7280', bg: 'rgba(107,114,128,0.05)', border: '#374151', icon: Clock },
@@ -65,8 +65,8 @@ const nodeTypes = { taskNode: TaskNode };
 export default function TaskDAG() {
   const taskBoard = useStore((s) => s.taskBoard);
   const setTaskBoard = useStore((s) => s.setTaskBoard);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   useEffect(() => {
     api.getTasks().then(setTaskBoard).catch(console.error);
@@ -124,7 +124,7 @@ export default function TaskDAG() {
         <MiniMap
           style={{ background: '#12121a' }}
           nodeColor={(n) => {
-            const cfg = statusConfig[(n.data as any)?.status] || statusConfig.pending;
+            const cfg = statusConfig[(n.data as Record<string, string>)?.status] || statusConfig.pending;
             return cfg.color;
           }}
           maskColor="rgba(10,10,15,0.7)"
