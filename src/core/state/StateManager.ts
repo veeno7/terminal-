@@ -1,12 +1,20 @@
+import fs from 'fs';
+import path from 'path';
 import Database from 'better-sqlite3';
 import { InternalState } from '../../shared/types/index.js';
 import { DB_PATHS } from '../../shared/constants.js';
 
+function ensureDir(filePath: string) {
+  const dir = path.dirname(filePath);
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+}
+
 export class StateManager {
-  private db: any;
+  private db: ReturnType<typeof Database>;
   private state: InternalState | null = null;
 
   constructor() {
+    ensureDir(DB_PATHS.STATE);
     this.db = new Database(DB_PATHS.STATE);
   }
 
@@ -19,9 +27,9 @@ export class StateManager {
       )
     `);
 
-    const row = this.db.prepare('SELECT data FROM state WHERE id = ?').get('current');
+    const row = this.db.prepare('SELECT data FROM state WHERE id = ?').get('current') as { data: string } | undefined;
     if (row) {
-      this.state = JSON.parse(row.data as string);
+      this.state = JSON.parse(row.data) as InternalState;
     } else {
       this.state = this.getDefaultState();
       await this.saveState();
